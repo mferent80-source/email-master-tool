@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Master Tool</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0a0a0f;color:#e0e6ff;min-height:100vh}
+.header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1e3a5f}
+.logo{font-size:18px;font-weight:600;color:#29b6f6}
+.user-info{display:flex;align-items:center;gap:10px;font-size:13px;color:#90caf9}
+.avatar{width:32px;height:32px;border-radius:50%;background:#1e3a5f;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#29b6f6}
+.tabs{display:flex;background:#0d1117;border-bottom:1px solid #1e3a5f;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:12px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:#607d8b;white-space:nowrap;transition:.2s}
+.tab.active{color:#29b6f6;border-bottom-color:#29b6f6}
+.content{padding:16px;max-width:900px;margin:0 auto}
+.section{display:none}.section.active{display:block}
+.card{background:#0d1117;border:1px solid #1e3a5f;border-radius:12px;padding:16px;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:600;color:#29b6f6;margin-bottom:12px}
+.btn{padding:10px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:.15s}
+.btn-blue{background:#0288d1;color:#fff}.btn-blue:hover{background:#0277bd}
+.btn-green{background:#1b5e20;color:#81c784;border:1px solid #2e7d32}.btn-green:hover{background:#2e7d32}
+.btn-red{background:#3e1a1a;color:#f48fb1;border:1px solid #7b1fa2}.btn-red:hover{background:#4a1a1a}
+.btn-outline{background:transparent;color:#29b6f6;border:1px solid #1e3a5f}.btn-outline:hover{background:#1a2a3e}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+input,textarea,select{width:100%;padding:10px 12px;background:#060d14;border:1px solid #1e3a5f;border-radius:8px;color:#e0e6ff;font-size:13px;font-family:system-ui;margin-bottom:8px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:#29b6f6}
+textarea{min-height:120px;resize:vertical}
+label{font-size:12px;color:#90caf9;display:block;margin-bottom:4px}
+.email-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #1a2a3e;cursor:pointer;transition:.2s}
+.email-item:hover{background:#0d1a2a;border-radius:8px;padding-left:8px}
+.email-item:last-child{border-bottom:none}
+.email-from{font-size:13px;font-weight:500;color:#e0e6ff;min-width:140px}
+.email-subject{font-size:13px;color:#90caf9;flex:1}
+.email-date{font-size:11px;color:#607d8b;white-space:nowrap}
+.email-unread .email-from{color:#29b6f6}
+.email-unread .email-subject{color:#e0e6ff;font-weight:500}
+.badge{font-size:10px;padding:2px 7px;border-radius:10px}
+.badge-blue{background:#1a2a3e;color:#64b5f6}
+.badge-green{background:#1a3e2a;color:#81c784}
+.badge-red{background:#3e1a1a;color:#f48fb1}
+.badge-orange{background:#3e2a1a;color:#ffb74d}
+.template-item{padding:10px;border:1px solid #1e3a5f;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:.2s}
+.template-item:hover{background:#1a2a3e;border-color:#29b6f6}
+.template-title{font-size:13px;font-weight:500;color:#29b6f6}
+.template-preview{font-size:11px;color:#607d8b;margin-top:3px}
+.login-screen{text-align:center;padding:60px 20px}
+.login-screen h2{font-size:24px;color:#29b6f6;margin-bottom:12px}
+.login-screen p{color:#607d8b;margin-bottom:30px;font-size:14px}
+.ai-msg{padding:10px 14px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;max-width:85%}
+.ai-msg.user{background:#0f3460;color:#e0e6ff;margin-left:auto;border-radius:10px 10px 2px 10px}
+.ai-msg.assistant{background:#0d1117;border:1px solid #1e3a5f;color:#e0e6ff;border-radius:2px 10px 10px 10px}
+.chat-area{max-height:300px;overflow-y:auto;margin-bottom:10px}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat{background:#060d14;border:1px solid #1e3a5f;border-radius:10px;padding:12px;text-align:center}
+.stat .val{font-size:22px;font-weight:600;color:#29b6f6}
+.stat .lbl{font-size:11px;color:#607d8b;margin-top:2px}
+.loading{text-align:center;padding:20px;color:#607d8b;font-size:13px}
+.email-view{background:#060d14;border:1px solid #1e3a5f;border-radius:10px;padding:16px;margin-top:10px;display:none}
+.email-view-header{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e3a5f}
+.email-view-from{font-size:14px;font-weight:500;color:#29b6f6}
+.email-view-subject{font-size:16px;font-weight:600;color:#e0e6ff;margin:4px 0}
+.email-view-date{font-size:11px;color:#607d8b}
+.email-view-body{font-size:13px;color:#cdd6f4;line-height:1.7;white-space:pre-wrap}
+.typing{display:inline-flex;gap:4px;align-items:center}
+.typing span{width:6px;height:6px;border-radius:50%;background:#29b6f6;animation:blink 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.notif-item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #1a2a3e}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:#29b6f6;margin-top:5px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div id="login-screen" class="login-screen">
+  <div style="font-size:48px;margin-bottom:16px">📧</div>
+  <h2>Email Master Tool</h2>
+  <p>Conecteaza-te cu Gmail pentru a accesa emailurile,<br>templates si asistentul AI</p>
+  <div id="google-signin-btn" style="display:inline-block;margin:0 auto"></div>
+  <p style="margin-top:20px;font-size:11px;color:#3a4a5e">Datele tale raman private. Nu stocam niciun email.</p>
+</div>
+
+<div id="app" style="display:none">
+  <div class="header">
+    <div class="logo">📧 Email Master Tool</div>
+    <div class="user-info">
+      <div class="avatar" id="user-avatar">?</div>
+      <span id="user-name">...</span>
+      <button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="signOut()">Logout</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('inbox')">📥 Inbox</div>
+    <div class="tab" onclick="switchTab('compose')">✏️ Scrie Email</div>
+    <div class="tab" onclick="switchTab('templates')">📋 Templates</div>
+    <div class="tab" onclick="switchTab('ai')">🤖 AI Assistant</div>
+    <div class="tab" onclick="switchTab('organizer')">🗂️ Organizer</div>
+    <div class="tab" onclick="switchTab('notificari')">🔔 Notificari</div>
+  </div>
+
+  <div class="content">
+
+    <!-- INBOX -->
+    <div id="inbox" class="section active">
+      <div class="stat-grid">
+        <div class="stat"><div class="val" id="total-emails">-</div><div class="lbl">Total</div></div>
+        <div class="stat"><div class="val" id="unread-emails" style="color:#f48fb1">-</div><div class="lbl">Necitite</div></div>
+        <div class="stat"><div class="val" id="today-emails">-</div><div class="lbl">Azi</div></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="card-title" style="margin:0">Inbox</div>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="search-inbox" placeholder="Cauta..." style="width:160px;margin:0;padding:6px 10px;font-size:12px" oninput="filterEmails()">
+            <button class="btn btn-outline" style="padding:6px 10px;font-size:11px" onclick="loadEmails()">🔄 Refresh</button>
+          </div>
+        </div>
+        <div id="emails-list"><div class="loading">Apasa Refresh pentru a incarca emailurile...</div></div>
+      </div>
+      <div class="email-view" id="email-view">
+        <div class="email-view-header">
+          <div class="email-view-from" id="view-from"></div>
+          <div class="email-view-subject" id="view-subject"></div>
+          <div class="email-view-date" id="view-date"></div>
+        </div>
+        <div class="email-view-body" id="view-body"></div>
+        <div class="btn-row" style="margin-top:12px">
+          <button class="btn btn-blue" onclick="replyWithAI()">🤖 Raspunde cu AI</button>
+          <button class="btn btn-outline" onclick="document.getElementById('email-view').style.display='none'">Inchide</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPOSE -->
+    <div id="compose" class="section">
+      <div class="card">
+        <div class="card-title">✏️ Scrie Email Nou</div>
+        <label>Catre:</label>
+        <input type="email" id="compose-to" placeholder="email@exemplu.ro">
+        <label>CC (optional):</label>
+        <input type="email" id="compose-cc" placeholder="cc@exemplu.ro">
+        <label>Subiect:</label>
+        <input type="text" id="compose-subject" placeholder="Subiectul emailului">
+        <label>Mesaj:</label>
+        <textarea id="compose-body" placeholder="Scrie mesajul tau aici..."></textarea>
+        <div class="btn-row">
+          <button class="btn btn-blue" onclick="sendEmail()">📤 Trimite</button>
+          <button class="btn btn-green" onclick="aiCompleteEmail()">🤖 Completeaza cu AI</button>
+          <button class="btn btn-outline" onclick="clearCompose()">🗑️ Sterge</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📋 Incarca Template Rapid</div>
+        <select id="quick-template" onchange="loadQuickTemplate()">
+          <option value="">-- Alege template --</option>
+          <option value="factura">Trimitere Factura</option>
+          <option value="debit">Notificare Debit Client</option>
+          <option value="confirmare">Confirmare Comanda</option>
+          <option value="followup">Follow-up Client</option>
+          <option value="contabil">Email Contabil</option>
+          <option value="intarziere">Avertisment Intarziere Plata</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- TEMPLATES -->
+    <div id="templates" class="section">
+      <div class="card">
+        <div class="card-title">📋 Templates Business</div>
+
+        <div class="template-item" onclick="useTemplate('factura')">
+          <div class="template-title">📄 Trimitere Factura <span class="badge badge-blue">Business</span></div>
+          <div class="template-preview">Template pentru trimiterea facturilor catre clienti</div>
+        </div>
+
+        <div class="template-item" onclick="useTemplate('debit')">
+          <div class="template-title">💰 Notificare Debit Client <span class="badge badge-orange">Financiar</span></div>
+          <div class="template-preview">Notificare pentru clienti cu datorii restante</div>
+        </div>
+
+        <div class="template-item" onclick="useTemplate('intarziere')">
+          <div class="template-title">⚠️ Avertisment Intarziere Plata <span class="badge badge-red">Urgent</span></div>
+          <div class="template-preview">Email formal pentru intarzieri de plata</div>
+        </div>
+
+        <div class="template-item" onclick="useTemplate('confirmare')">
+          <div class="template-title">✅ Confirmare Comanda/Serviciu <span class="badge badge-green">Confirmare</span></div>
+          <div class="template-preview">Confirmare pentru comenzi sau servicii contractate</div>
+        </div>
+
+        <div class="template-item" onclick="useTemplate('followup')">
+          <div class="template-title">🔄 Follow-up Client <span class="badge badge-blue">Relatie</span></div>
+          <div class="template-preview">Urmarire dupa o intalnire sau discutie anterioara</div>
+        </div>
+
+        <div class="template-item" onclick="useTemplate('contabil')">
+          <div class="template-title">📊 Email Contabil <span class="badge badge-blue">Contabilitate</span></div>
+          <div class="template-preview">Trimitere documente catre contabil</div>
+        </div>
+
+        <div class="template-item" onclick="useTemplate('oferta')">
+          <div class="template-title">💼 Oferta Comerciala <span class="badge badge-green">Vanzari</span></div>
+          <div class="template-preview">Prezentare oferta catre potential client</div>
+        </div>
+
+        <div class="template-item" onclick="useTemplate('multumire')">
+          <div class="template-title">🙏 Multumire Client <span class="badge badge-green">Relatie</span></div>
+          <div class="template-preview">Email de multumire dupa colaborare</div>
+        </div>
+      </div>
+
+      <div class="card" id="template-preview-card" style="display:none">
+        <div class="card-title">Preview Template</div>
+        <div style="margin-bottom:8px">
+          <label>Subiect:</label>
+          <input type="text" id="tpl-subject" readonly style="background:#060d14">
+        </div>
+        <label>Continut:</label>
+        <textarea id="tpl-body" style="min-height:200px"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-blue" onclick="sendTemplate()">📤 Trimite acest template</button>
+          <button class="btn btn-green" onclick="editTemplate()">✏️ Editeaza</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI ASSISTANT -->
+    <div id="ai" class="section">
+      <div class="card">
+        <div class="card-title">🤖 AI Email Assistant</div>
+        <p style="font-size:12px;color:#607d8b;margin-bottom:12px">Descrie ce vrei sa comunici si AI-ul genereaza emailul profesional pentru tine</p>
+
+        <div class="chat-area" id="ai-chat">
+          <div class="ai-msg assistant">Buna! Sunt asistentul tau de email. Spune-mi ce vrei sa comunici si generez un email profesional. De exemplu: "Vreau sa trimit o factura clientului Ion Popescu" sau "Clientul nu a platit de 30 zile, scrie un email formal".</div>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <input type="text" id="ai-input" placeholder="Ex: Scrie un email de urmarire pentru clientul care nu a platit factura..." style="margin:0" onkeydown="if(event.key==='Enter')sendAIMsg()">
+          <button class="btn btn-blue" onclick="sendAIMsg()" style="white-space:nowrap">Trimite</button>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+          <button class="btn btn-outline" style="font-size:11px;padding:5px 10px" onclick="aiQuick('Scrie un email pentru a trimite o factura unui client')">Trimitere factura</button>
+          <button class="btn btn-outline" style="font-size:11px;padding:5px 10px" onclick="aiQuick('Clientul nu a platit de 30 de zile, scrie un email formal de avertisment')">Debit restant</button>
+          <button class="btn btn-outline" style="font-size:11px;padding:5px 10px" onclick="aiQuick('Scrie un email profesional de follow-up dupa o intalnire de afaceri')">Follow-up</button>
+          <button class="btn btn-outline" style="font-size:11px;padding:5px 10px" onclick="aiQuick('Scrie un email catre contabil pentru trimiterea documentelor lunare')">Email contabil</button>
+        </div>
+      </div>
+
+      <div class="card" id="ai-email-result" style="display:none">
+        <div class="card-title">Email generat de AI</div>
+        <label>Subiect:</label>
+        <input type="text" id="ai-email-subject">
+        <label>Continut:</label>
+        <textarea id="ai-email-body" style="min-height:200px"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-blue" onclick="useAIEmail()">📤 Foloseste acest email</button>
+          <button class="btn btn-outline" onclick="document.getElementById('ai-email-result').style.display='none'">Inchide</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORGANIZER -->
+    <div id="organizer" class="section">
+      <div class="card">
+        <div class="card-title">🗂️ Organizer Automat</div>
+        <p style="font-size:12px;color:#607d8b;margin-bottom:12px">Analizeaza inbox-ul si sorteaza emailurile pe categorii</p>
+        <button class="btn btn-blue" onclick="organizeEmails()" style="width:100%">🔍 Analizeaza si Organizeaza Inbox</button>
+      </div>
+
+      <div id="organizer-results" style="display:none">
+        <div class="card">
+          <div class="card-title">📊 Rezultate Analiza</div>
+          <div id="org-stats"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">💰 Financiar (Facturi, Debite)</div>
+          <div id="org-financial"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">👥 Clienti</div>
+          <div id="org-clients"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📊 Contabilitate</div>
+          <div id="org-accounting"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📧 Altele</div>
+          <div id="org-other"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICARI -->
+    <div id="notificari" class="section">
+      <div class="card">
+        <div class="card-title">🔔 Setari Notificari</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a2a3e">
+          <div>
+            <div style="font-size:13px;font-weight:500">Notificari desktop</div>
+            <div style="font-size:11px;color:#607d8b">Alerta cand primesti email nou</div>
+          </div>
+          <button class="btn btn-green" id="notif-btn" onclick="toggleNotifications()">Activeaza</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a2a3e">
+          <div>
+            <div style="font-size:13px;font-weight:500">Verificare automata</div>
+            <div style="font-size:11px;color:#607d8b">Verifica emailuri noi la fiecare 5 minute</div>
+          </div>
+          <button class="btn btn-green" id="auto-check-btn" onclick="toggleAutoCheck()">Activeaza</button>
+        </div>
+        <div style="padding:8px 0">
+          <div style="font-size:13px;font-weight:500;margin-bottom:6px">Cuvinte cheie importante</div>
+          <div style="font-size:11px;color:#607d8b;margin-bottom:8px">Notificare speciala cand emailul contine aceste cuvinte</div>
+          <input type="text" id="keywords" placeholder="factura, urgent, plata, debit..." style="margin-bottom:8px">
+          <button class="btn btn-blue" onclick="saveKeywords()">Salveaza</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔔 Notificari Recente</div>
+        <div id="notif-list">
+          <div style="font-size:13px;color:#607d8b;text-align:center;padding:20px">Nicio notificare inca. Activeaza notificarile si asteapta emailuri noi!</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const CLIENT_ID = '310526696349-uqtnvbkji1rj81udga17b7nd9obip1bv.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify';
+
+let accessToken = null;
+let userEmail = '';
+let userName = '';
+let allEmails = [];
+let notificationsEnabled = false;
+let autoCheckInterval = null;
+let lastEmailId = null;
+let keywords = ['factura', 'urgent', 'plata', 'debit', 'scadent'];
+
+// ============================================================
+// AUTH
+// ============================================================
+window.onload = function() {
+  google.accounts.id.initialize({
+    client_id: CLIENT_ID,
+    callback: handleCredential,
+    auto_select: false
+  });
+  
+  const tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (response) => {
+      if (response.access_token) {
+        accessToken = response.access_token;
+        showApp();
+      }
+    }
+  });
+  
+  document.getElementById('google-signin-btn').innerHTML = `
+    <button onclick="window._tokenClient.requestAccessToken()" style="
+      background:#0288d1;color:#fff;border:none;padding:14px 28px;
+      border-radius:8px;font-size:14px;cursor:pointer;font-weight:500
+    ">🔐 Conecteaza-te cu Gmail</button>`;
+  
+  window._tokenClient = tokenClient;
+};
+
+function handleCredential(response) {
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  userName = payload.name;
+  userEmail = payload.email;
+}
+
+function showApp() {
+  fetch('https://www.googleapis.com/gmail/v1/users/me/profile', {
+    headers: { 'Authorization': 'Bearer ' + accessToken }
+  }).then(r => r.json()).then(data => {
+    userEmail = data.emailAddress;
+    userName = userEmail.split('@')[0];
+    document.getElementById('user-name').textContent = userEmail;
+    document.getElementById('user-avatar').textContent = userName[0].toUpperCase();
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadEmails();
+  });
+}
+
+function signOut() {
+  accessToken = null;
+  document.getElementById('login-screen').style.display = 'block';
+  document.getElementById('app').style.display = 'none';
+}
+
+// ============================================================
+// INBOX
+// ============================================================
+async function loadEmails() {
+  if (!accessToken) return;
+  document.getElementById('emails-list').innerHTML = '<div class="loading">Se incarca emailurile...</div>';
+  
+  try {
+    const res = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=30&labelIds=INBOX', {
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    });
+    const data = await res.json();
+    
+    if (!data.messages) {
+      document.getElementById('emails-list').innerHTML = '<div class="loading">Inbox gol!</div>';
+      return;
+    }
+
+    const emails = await Promise.all(data.messages.slice(0, 20).map(m => fetchEmail(m.id)));
+    allEmails = emails.filter(Boolean);
+    
+    const unread = allEmails.filter(e => e.unread).length;
+    const today = allEmails.filter(e => {
+      const d = new Date(parseInt(e.date));
+      const now = new Date();
+      return d.toDateString() === now.toDateString();
+    }).length;
+    
+    document.getElementById('total-emails').textContent = allEmails.length;
+    document.getElementById('unread-emails').textContent = unread;
+    document.getElementById('today-emails').textContent = today;
+    
+    if (allEmails.length > 0) lastEmailId = allEmails[0].id;
+    
+    renderEmails(allEmails);
+  } catch(e) {
+    document.getElementById('emails-list').innerHTML = '<div class="loading">Eroare la incarcare. Incearca din nou.</div>';
+  }
+}
+
+async function fetchEmail(id) {
+  try {
+    const res = await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`, {
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    });
+    const data = await res.json();
+    const headers = data.payload.headers;
+    const get = (name) => (headers.find(h => h.name === name) || {}).value || '';
+    return {
+      id: data.id,
+      from: get('From'),
+      subject: get('Subject') || '(fara subiect)',
+      date: data.internalDate,
+      unread: data.labelIds && data.labelIds.includes('UNREAD'),
+      snippet: data.snippet
+    };
+  } catch(e) { return null; }
+}
+
+function renderEmails(emails) {
+  if (!emails.length) {
+    document.getElementById('emails-list').innerHTML = '<div class="loading">Niciun email gasit.</div>';
+    return;
+  }
+  document.getElementById('emails-list').innerHTML = emails.map(e => `
+    <div class="email-item ${e.unread ? 'email-unread' : ''}" onclick="viewEmail('${e.id}')">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <div class="email-from">${formatFrom(e.from)}</div>
+          <div class="email-date">${formatDate(e.date)}</div>
+        </div>
+        <div class="email-subject">${e.subject}</div>
+        <div style="font-size:11px;color:#3a4a5e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.snippet}</div>
+      </div>
+    </div>`).join('');
+}
+
+function filterEmails() {
+  const q = document.getElementById('search-inbox').value.toLowerCase();
+  const filtered = allEmails.filter(e => 
+    e.from.toLowerCase().includes(q) || 
+    e.subject.toLowerCase().includes(q) ||
+    e.snippet.toLowerCase().includes(q)
+  );
+  renderEmails(filtered);
+}
+
+async function viewEmail(id) {
+  try {
+    const res = await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`, {
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    });
+    const data = await res.json();
+    const headers = data.payload.headers;
+    const get = (name) => (headers.find(h => h.name === name) || {}).value || '';
+    
+    let body = '';
+    const getBody = (parts) => {
+      if (!parts) return '';
+      for (const part of parts) {
+        if (part.mimeType === 'text/plain' && part.body.data) {
+          return atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+        }
+        if (part.parts) {
+          const sub = getBody(part.parts);
+          if (sub) return sub;
+        }
+      }
+      return '';
+    };
+    
+    if (data.payload.body && data.payload.body.data) {
+      body = atob(data.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+    } else if (data.payload.parts) {
+      body = getBody(data.payload.parts);
+    }
+    
+    document.getElementById('view-from').textContent = get('From');
+    document.getElementById('view-subject').textContent = get('Subject');
+    document.getElementById('view-date').textContent = new Date(parseInt(data.internalDate)).toLocaleString('ro');
+    document.getElementById('view-body').textContent = body || data.snippet;
+    document.getElementById('email-view').style.display = 'block';
+    document.getElementById('email-view').scrollIntoView({behavior:'smooth'});
+    
+    window._currentEmailSubject = get('Subject');
+    window._currentEmailFrom = get('From');
+    window._currentEmailBody = body;
+  } catch(e) {
+    alert('Nu s-a putut incarca emailul.');
+  }
+}
+
+function formatFrom(from) {
+  const match = from.match(/^"?([^"<]+)"?\s*</);
+  return match ? match[1].trim() : from.split('@')[0];
+}
+
+function formatDate(ts) {
+  const d = new Date(parseInt(ts));
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString('ro', {hour:'2-digit',minute:'2-digit'});
+  }
+  return d.toLocaleDateString('ro', {day:'2-digit',month:'2-digit'});
+}
+
+// ============================================================
+// COMPOSE
+// ============================================================
+async function sendEmail() {
+  const to = document.getElementById('compose-to').value;
+  const cc = document.getElementById('compose-cc').value;
+  const subject = document.getElementById('compose-subject').value;
+  const body = document.getElementById('compose-body').value;
+  
+  if (!to || !subject || !body) {
+    alert('Completeaza toate campurile obligatorii!');
+    return;
+  }
+  
+  let email = `To: ${to}\r\n`;
+  if (cc) email += `Cc: ${cc}\r\n`;
+  email += `Subject: ${subject}\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n${body}`;
+  
+  const encoded = btoa(unescape(encodeURIComponent(email))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  
+  try {
+    const res = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw: encoded })
+    });
+    if (res.ok) {
+      alert('Email trimis cu succes! ✅');
+      clearCompose();
+    } else {
+      alert('Eroare la trimitere. Incearca din nou.');
+    }
+  } catch(e) {
+    alert('Eroare la trimitere.');
+  }
+}
+
+function clearCompose() {
+  document.getElementById('compose-to').value = '';
+  document.getElementById('compose-cc').value = '';
+  document.getElementById('compose-subject').value = '';
+  document.getElementById('compose-body').value = '';
+}
+
+async function aiCompleteEmail() {
+  const subject = document.getElementById('compose-subject').value;
+  const body = document.getElementById('compose-body').value;
+  if (!subject && !body) { alert('Scrie cel putin subiectul sau inceputul mesajului!'); return; }
+  
+  const prompt = `Completeaza si imbunatateste acest email de business in romana, ton profesional:\nSubiect: ${subject}\nInceputul mesajului: ${body}\n\nRaspunde DOAR cu textul emailului completat, fara explicatii.`;
+  
+  const result = await callAI(prompt);
+  if (result) document.getElementById('compose-body').value = result;
+}
+
+// ============================================================
+// TEMPLATES
+// ============================================================
+const templates = {
+  factura: {
+    subject: 'Factura nr. [NUMAR] - [LUNA] [AN]',
+    body: `Stimate/Stimata [NUME CLIENT],
+
+Va transmitem atasat factura nr. [NUMAR] emisa in data de [DATA], in valoare de [SUMA] lei, aferenta serviciilor/produselor contractate.
+
+Va rugam sa efectuati plata pana la data de [SCADENTA].
+
+Date bancare:
+Banca: [BANCA]
+IBAN: [IBAN]
+Beneficiar: [FIRMA DVS]
+
+In caz de neclaritati, nu ezitati sa ne contactati.
+
+Cu stima,
+[NUMELE DVS]
+[FIRMA]
+[TELEFON]`
+  },
+  debit: {
+    subject: 'Notificare sold restant - [FIRMA CLIENT]',
+    body: `Stimate/Stimata [NUME CLIENT],
+
+Va informam ca la data de [DATA] aveti un sold restant in valoare de [SUMA] lei, reprezentand contravaloarea facturii/facturilor nr. [NUMERE FACTURI] cu scadenta depasita.
+
+Va rugam sa regularizati situatia in cel mai scurt timp posibil.
+
+Pentru clarificari sau daca ati efectuat deja plata, va rugam sa ne contactati.
+
+Cu stima,
+[NUMELE DVS]
+[FIRMA]
+[TELEFON]`
+  },
+  intarziere: {
+    subject: 'URGENT: Intarziere la plata - Factura [NUMAR]',
+    body: `Stimate/Stimata [NUME CLIENT],
+
+Aceasta este o notificare formala privind intarzierea la plata a facturii nr. [NUMAR], in valoare de [SUMA] lei, cu scadenta la data de [DATA SCADENTA].
+
+Termenul de plata a fost depasit cu [NUMAR] zile.
+
+Va solicitam sa efectuati plata in termen de [TERMEN] zile lucratoare de la primirea acestui email, pentru a evita masuri suplimentare.
+
+In caz contrar, suntem nevoiti sa apelam la proceduri legale de recuperare a creantei.
+
+Cu stima,
+[NUMELE DVS]
+[FIRMA]
+[TELEFON]`
+  },
+  confirmare: {
+    subject: 'Confirmare [SERVICIU/COMANDA] - [FIRMA DVS]',
+    body: `Stimate/Stimata [NUME CLIENT],
+
+Va confirmam inregistrarea comenzii/contractului pentru [DESCRIERE SERVICIU/PRODUS].
+
+Detalii:
+- Data: [DATA]
+- Valoare: [SUMA] lei
+- Termen livrare/prestare: [TERMEN]
+
+Va vom contacta in curand pentru urmatoarele detalii.
+
+Cu stima,
+[NUMELE DVS]
+[FIRMA]
+[TELEFON]`
+  },
+  followup: {
+    subject: 'Urmarire - [SUBIECT DISCUTIE ANTERIOARA]',
+    body: `Stimate/Stimata [NUME],
+
+Va contactez in urma discutiei noastre din data de [DATA], referitor la [SUBIECT].
+
+Doream sa verific daca ati avut ocazia sa analizati propunerea noastra si daca aveti intrebari sau clarificari.
+
+Suntem disponibili pentru o noua intalnire sau o discutie telefonica la convenientea dumneavoastra.
+
+Va astept raspunsul.
+
+Cu stima,
+[NUMELE DVS]
+[FIRMA]
+[TELEFON]`
+  },
+  contabil: {
+    subject: 'Documente contabilitate - [LUNA] [AN]',
+    body: `Buna ziua,
+
+Va transmit atasat documentele contabile aferente lunii [LUNA] [AN]:
+
+[ ] Facturi emise: [NUMAR] buc
+[ ] Facturi primite: [NUMAR] buc
+[ ] Extrase bancare
+[ ] Chitante/Bonuri fiscale
+[ ] Alte documente: [DESCRIERE]
+
+Va rog sa confirmati primirea documentelor si sa ma informati daca mai aveti nevoie de documente suplimentare.
+
+Multumesc,
+[NUMELE DVS]
+[TELEFON]`
+  },
+  oferta: {
+    subject: 'Oferta comerciala - [FIRMA DVS] - [DATA]',
+    body: `Stimate/Stimata [NUME],
+
+Ca urmare a discutiei noastre, va prezentam oferta noastra comerciala pentru [DESCRIERE SERVICII/PRODUSE]:
+
+Servicii/Produse oferite:
+1. [PRODUS/SERVICIU 1] - [PRET] lei
+2. [PRODUS/SERVICIU 2] - [PRET] lei
+
+Total oferta: [TOTAL] lei + TVA
+
+Oferta este valabila pana la data de [DATA VALABILITATE].
+
+Pentru detalii suplimentare sau negociere, va stam la dispozitie.
+
+Cu stima,
+[NUMELE DVS]
+[FIRMA]
+[TELEFON]`
+  },
+  multumire: {
+    subject: 'Multumire pentru colaborare - [FIRMA DVS]',
+    body: `Stimate/Stimata [NUME],
+
+Dorim sa va multumim pentru colaborarea avuta si pentru increderea acordata companiei noastre.
+
+A fost o placere sa lucram impreuna si speram ca serviciile/produsele noastre v-au satisfacut asteptarile.
+
+Suntem disponibili oricand pentru noi colaborari si va asiguram de aceeasi seriozitate si profesionalism.
+
+Cu stima si respect,
+[NUMELE DVS]
+[FIRMA]
+[TELEFON]`
+  }
+};
+
+function useTemplate(name) {
+  const tpl = templates[name];
+  if (!tpl) return;
+  document.getElementById('tpl-subject').value = tpl.subject;
+  document.getElementById('tpl-body').value = tpl.body;
+  document.getElementById('template-preview-card').style.display = 'block';
+  document.getElementById('template-preview-card').scrollIntoView({behavior:'smooth'});
+}
+
+function sendTemplate() {
+  const subject = document.getElementById('tpl-subject').value;
+  const body = document.getElementById('tpl-body').value;
+  document.getElementById('compose-subject').value = subject;
+  document.getElementById('compose-body').value = body;
+  switchTab('compose');
+}
+
+function editTemplate() {
+  const subject = document.getElementById('tpl-subject').value;
+  const body = document.getElementById('tpl-body').value;
+  document.getElementById('compose-subject').value = subject;
+  document.getElementById('compose-body').value = body;
+  switchTab('compose');
+}
+
+function loadQuickTemplate() {
+  const val = document.getElementById('quick-template').value;
+  if (!val) return;
+  const tpl = templates[val];
+  if (tpl) {
+    document.getElementById('compose-subject').value = tpl.subject;
+    document.getElementById('compose-body').value = tpl.body;
+  }
+}
+
+// ============================================================
+// AI ASSISTANT
+// ============================================================
+const aiHistory = [];
+
+async function sendAIMsg() {
+  const input = document.getElementById('ai-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  
+  addAIMsg('user', msg);
+  aiHistory.push({role:'user', content: msg});
+  
+  const typingId = addTyping();
+  const reply = await callAI(null, aiHistory);
+  removeTyping(typingId);
+  
+  if (reply) {
+    addAIMsg('assistant', reply);
+    aiHistory.push({role:'assistant', content: reply});
+    
+    if (reply.includes('Subiect:') || reply.includes('Stimate') || reply.includes('Buna ziua')) {
+      const lines = reply.split('\n');
+      const subjectLine = lines.find(l => l.toLowerCase().includes('subiect:'));
+      const subject = subjectLine ? subjectLine.replace(/subiect:/i,'').trim() : 'Email generat AI';
+      const body = reply.replace(subjectLine || '', '').trim();
+      
+      document.getElementById('ai-email-subject').value = subject;
+      document.getElementById('ai-email-body').value = body;
+      document.getElementById('ai-email-result').style.display = 'block';
+    }
+  }
+}
+
+function aiQuick(q) {
+  document.getElementById('ai-input').value = q;
+  sendAIMsg();
+}
+
+async function replyWithAI() {
+  const subject = window._currentEmailSubject || '';
+  const from = window._currentEmailFrom || '';
+  const body = window._currentEmailBody || '';
+  
+  const prompt = `Genereaza un raspuns profesional in romana pentru urmatorul email:\nDe la: ${from}\nSubiect: ${subject}\nContinut: ${body.substring(0,500)}\n\nRaspunde DOAR cu textul emailului de raspuns, ton profesional.`;
+  
+  switchTab('ai');
+  document.getElementById('ai-input').value = `Raspunde la emailul de la ${from} cu subiectul: ${subject}`;
+  sendAIMsg();
+}
+
+function useAIEmail() {
+  document.getElementById('compose-subject').value = document.getElementById('ai-email-subject').value;
+  document.getElementById('compose-body').value = document.getElementById('ai-email-body').value;
+  switchTab('compose');
+}
+
+async function callAI(prompt, history) {
+  try {
+    const messages = history ? history : [{role:'user', content: prompt}];
+    const system = `Esti un asistent profesional de email pentru o afacere din Romania. Scrii emailuri profesionale in romana, cu ton formal dar prietenos. Cand generezi un email, include intotdeauna "Subiect: [subiect]" la inceput, urmat de continutul emailului.`;
+    
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system,
+        messages
+      })
+    });
+    const data = await res.json();
+    return data.content?.[0]?.text || null;
+  } catch(e) { return null; }
+}
+
+function addAIMsg(role, text) {
+  const area = document.getElementById('ai-chat');
+  const div = document.createElement('div');
+  div.className = `ai-msg ${role}`;
+  div.textContent = text;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function addTyping() {
+  const area = document.getElementById('ai-chat');
+  const id = 'typing-' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'ai-msg assistant';
+  div.id = id;
+  div.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return id;
+}
+
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+// ============================================================
+// ORGANIZER
+// ============================================================
+function organizeEmails() {
+  if (!allEmails.length) {
+    alert('Incarca emailurile mai intai din tab-ul Inbox!');
+    return;
+  }
+  
+  const financial = allEmails.filter(e => /factur|plat|debit|sold|suma|lei|tva|fiscal/i.test(e.subject + e.snippet));
+  const clients = allEmails.filter(e => /client|comanda|oferta|contract|colaborar/i.test(e.subject + e.snippet));
+  const accounting = allEmails.filter(e => /contabil|bilant|declarati|fiscal|anaf|impozit/i.test(e.subject + e.snippet));
+  const other = allEmails.filter(e => !financial.includes(e) && !clients.includes(e) && !accounting.includes(e));
+  
+  document.getElementById('organizer-results').style.display = 'block';
+  document.getElementById('org-stats').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat"><div class="val" style="color:#f48fb1">${financial.length}</div><div class="lbl">Financiar</div></div>
+      <div class="stat"><div class="val" style="color:#81c784">${clients.length}</div><div class="lbl">Clienti</div></div>
+      <div class="stat"><div class="val" style="color:#64b5f6">${accounting.length}</div><div class="lbl">Contabilitate</div></div>
+    </div>`;
+  
+  const renderList = (emails) => emails.length ? emails.map(e => `
+    <div class="email-item" onclick="switchTab('inbox')">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${formatFrom(e.from)}</div>
+        <div style="font-size:12px;color:#90caf9">${e.subject}</div>
+      </div>
+      <div style="font-size:11px;color:#607d8b">${formatDate(e.date)}</div>
+    </div>`).join('') : '<div style="color:#607d8b;font-size:13px;padding:8px">Niciun email in aceasta categorie</div>';
+  
+  document.getElementById('org-financial').innerHTML = renderList(financial);
+  document.getElementById('org-clients').innerHTML = renderList(clients);
+  document.getElementById('org-accounting').innerHTML = renderList(accounting);
+  document.getElementById('org-other').innerHTML = renderList(other);
+  
+  document.getElementById('organizer-results').scrollIntoView({behavior:'smooth'});
+}
+
+// ============================================================
+// NOTIFICARI
+// ============================================================
+function toggleNotifications() {
+  if (!notificationsEnabled) {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        notificationsEnabled = true;
+        document.getElementById('notif-btn').textContent = 'Dezactiveaza';
+        document.getElementById('notif-btn').className = 'btn btn-red';
+        addNotifLog('Notificari desktop activate');
+      }
+    });
+  } else {
+    notificationsEnabled = false;
+    document.getElementById('notif-btn').textContent = 'Activeaza';
+    document.getElementById('notif-btn').className = 'btn btn-green';
+    addNotifLog('Notificari desktop dezactivate');
+  }
+}
+
+function toggleAutoCheck() {
+  if (!autoCheckInterval) {
+    autoCheckInterval = setInterval(checkNewEmails, 5 * 60 * 1000);
+    document.getElementById('auto-check-btn').textContent = 'Dezactiveaza';
+    document.getElementById('auto-check-btn').className = 'btn btn-red';
+    addNotifLog('Verificare automata activata (la 5 min)');
+  } else {
+    clearInterval(autoCheckInterval);
+    autoCheckInterval = null;
+    document.getElementById('auto-check-btn').textContent = 'Activeaza';
+    document.getElementById('auto-check-btn').className = 'btn btn-green';
+    addNotifLog('Verificare automata dezactivata');
+  }
+}
+
+async function checkNewEmails() {
+  if (!accessToken) return;
+  try {
+    const res = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=1&labelIds=INBOX', {
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    });
+    const data = await res.json();
+    if (data.messages && data.messages[0].id !== lastEmailId) {
+      const email = await fetchEmail(data.messages[0].id);
+      if (email) {
+        lastEmailId = email.id;
+        const isImportant = keywords.some(k => (email.subject + email.snippet).toLowerCase().includes(k));
+        if (notificationsEnabled) {
+          new Notification(isImportant ? '⚠️ Email Important!' : '📧 Email Nou', {
+            body: `De la: ${formatFrom(email.from)}\n${email.subject}`,
+            icon: '📧'
+          });
+        }
+        addNotifLog(`Email nou de la ${formatFrom(email.from)}: ${email.subject}${isImportant ? ' ⚠️ IMPORTANT' : ''}`);
+      }
+    }
+  } catch(e) {}
+}
+
+function saveKeywords() {
+  const kw = document.getElementById('keywords').value;
+  keywords = kw.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+  addNotifLog('Cuvinte cheie salvate: ' + keywords.join(', '));
+}
+
+function addNotifLog(msg) {
+  const list = document.getElementById('notif-list');
+  const empty = list.querySelector('div[style]');
+  if (empty) empty.remove();
+  
+  const div = document.createElement('div');
+  div.className = 'notif-item';
+  div.innerHTML = `<div class="notif-dot"></div><div><div style="font-size:13px">${msg}</div><div style="font-size:11px;color:#607d8b">${new Date().toLocaleTimeString('ro')}</div></div>`;
+  list.insertBefore(div, list.firstChild);
+}
+
+// ============================================================
+// UI
+// ============================================================
+function switchTab(tab) {
+  const tabs = ['inbox','compose','templates','ai','organizer','notificari'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', tabs[i] === tab));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+}
+</script>
+</body>
+</html>
