@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0a0a0f">
 <title>Email Master Tool</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -104,8 +103,16 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;font-fam
   <div style="font-size:48px;margin-bottom:16px">📧</div>
   <h2>Email<span>Master</span></h2>
   <p>Conecteaza-te cu Gmail pentru a accesa emailurile,<br>templates si asistentul AI</p>
-  <div id="google-signin-btn" style="display:inline-block;margin:0 auto"></div>
-  <p style="margin-top:20px;font-size:11px;color:#3a4a5e">Datele tale raman private. Nu stocam niciun email.</p>
+  <button onclick="startLogin()" style="
+    background:var(--accent);color:#fff;border:none;
+    padding:14px 32px;border-radius:10px;
+    font-family:'Syne',sans-serif;font-weight:700;
+    font-size:15px;cursor:pointer;margin-top:10px;
+    display:inline-flex;align-items:center;gap:10px
+  ">
+    <span style="font-size:20px">G</span> Conecteaza-te cu Gmail
+  </button>
+  <p style="margin-top:20px;font-size:11px;color:var(--muted)">Datele tale raman private. Nu stocam niciun email.</p>
 </div>
 
 <div id="app" style="display:none">
@@ -426,38 +433,34 @@ let keywords = ['factura', 'urgent', 'plata', 'debit', 'scadent'];
 // ============================================================
 // AUTH
 // ============================================================
-window.onload = function() {
-  google.accounts.id.initialize({
+function startLogin() {
+  const params = new URLSearchParams({
     client_id: CLIENT_ID,
-    callback: handleCredential,
-    auto_select: false
-  });
-  
-  const tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
+    redirect_uri: window.location.href.split('?')[0].split('#')[0],
+    response_type: 'token',
     scope: SCOPES,
-    callback: (response) => {
-      if (response.access_token) {
-        accessToken = response.access_token;
-        showApp();
-      }
-    }
+    include_granted_scopes: 'true',
+    state: 'email_master'
   });
-  
-  document.getElementById('google-signin-btn').innerHTML = `
-    <button onclick="window._tokenClient.requestAccessToken()" style="
-      background:#0288d1;color:#fff;border:none;padding:14px 28px;
-      border-radius:8px;font-size:14px;cursor:pointer;font-weight:500
-    ">🔐 Conecteaza-te cu Gmail</button>`;
-  
-  window._tokenClient = tokenClient;
-};
-
-function handleCredential(response) {
-  const payload = JSON.parse(atob(response.credential.split('.')[1]));
-  userName = payload.name;
-  userEmail = payload.email;
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
 }
+
+function checkAuthCallback() {
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const token = params.get('access_token');
+    if (token) {
+      accessToken = token;
+      window.history.replaceState({}, document.title, window.location.pathname);
+      showApp();
+    }
+  }
+}
+
+window.onload = function() {
+  checkAuthCallback();
+};
 
 function showApp() {
   fetch('https://www.googleapis.com/gmail/v1/users/me/profile', {
