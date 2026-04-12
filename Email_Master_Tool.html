@@ -1,84 +1,95 @@
 <!DOCTYPE html>
-<html lang="ro">
+<html lang="ro" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0f">
 <title>Email Master Tool</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#0a0a0f;color:#e0e6ff;min-height:100vh}
-.header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1e3a5f}
-.logo{font-size:18px;font-weight:600;color:#29b6f6}
-.user-info{display:flex;align-items:center;gap:10px;font-size:13px;color:#90caf9}
-.avatar{width:32px;height:32px;border-radius:50%;background:#1e3a5f;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#29b6f6}
-.tabs{display:flex;background:#0d1117;border-bottom:1px solid #1e3a5f;overflow-x:auto;scrollbar-width:none}
+:root{
+  --bg:#0a0a0f;--surface:#111118;--surface2:#1a1a24;--border:#2a2a3a;
+  --accent:#ff4d6d;--accent2:#ffd166;--green:#06d6a0;
+  --text:#e8e8f0;--muted:#6b6b80;
+  --purple:#a78bfa;--blue:#38bdf8;--orange:#fb923c;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:var(--surface);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text)}
+.logo span{color:var(--accent)}
+.user-info{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,77,109,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
-.tab{flex:0 0 auto;padding:12px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:#607d8b;white-space:nowrap;transition:.2s}
-.tab.active{color:#29b6f6;border-bottom-color:#29b6f6}
-.content{padding:16px;max-width:900px;margin:0 auto}
+.tab{flex:0 0 auto;padding:11px 16px;font-size:11px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap;transition:.2s;text-transform:uppercase;letter-spacing:.5px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.content{padding:14px;max-width:900px;margin:0 auto}
 .section{display:none}.section.active{display:block}
-.card{background:#0d1117;border:1px solid #1e3a5f;border-radius:12px;padding:16px;margin-bottom:12px}
-.card-title{font-size:14px;font-weight:600;color:#29b6f6;margin-bottom:12px}
-.btn{padding:10px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:.15s}
-.btn-blue{background:#0288d1;color:#fff}.btn-blue:hover{background:#0277bd}
-.btn-green{background:#1b5e20;color:#81c784;border:1px solid #2e7d32}.btn-green:hover{background:#2e7d32}
-.btn-red{background:#3e1a1a;color:#f48fb1;border:1px solid #7b1fa2}.btn-red:hover{background:#4a1a1a}
-.btn-outline{background:transparent;color:#29b6f6;border:1px solid #1e3a5f}.btn-outline:hover{background:#1a2a3e}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.card-title{font-size:12px;font-weight:700;font-family:'Syne',sans-serif;color:var(--accent);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.btn{padding:9px 16px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:'Syne',sans-serif;transition:.15s;touch-action:manipulation}
+.btn-blue{background:var(--accent);color:#fff;border:1px solid var(--accent)}.btn-blue:active{background:#e0003a}
+.btn-green{background:rgba(6,214,160,0.12);color:var(--green);border:1px solid rgba(6,214,160,0.3)}.btn-green:active{background:rgba(6,214,160,0.2)}
+.btn-red{background:rgba(255,77,109,0.1);color:var(--accent);border:1px solid rgba(255,77,109,0.3)}.btn-red:active{background:rgba(255,77,109,0.2)}
+.btn-outline{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-outline:active{background:var(--surface2)}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-input,textarea,select{width:100%;padding:10px 12px;background:#060d14;border:1px solid #1e3a5f;border-radius:8px;color:#e0e6ff;font-size:13px;font-family:system-ui;margin-bottom:8px}
-input:focus,textarea:focus,select:focus{outline:none;border-color:#29b6f6}
+input,textarea,select{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'DM Mono',monospace;margin-bottom:8px;transition:border-color .2s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
 textarea{min-height:120px;resize:vertical}
-label{font-size:12px;color:#90caf9;display:block;margin-bottom:4px}
-.email-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #1a2a3e;cursor:pointer;transition:.2s}
-.email-item:hover{background:#0d1a2a;border-radius:8px;padding-left:8px}
+label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;font-family:'Syne',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.email-item{display:flex;gap:12px;padding:10px 8px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s;border-radius:8px}
+.email-item:hover{background:var(--surface2)}
 .email-item:last-child{border-bottom:none}
-.email-from{font-size:13px;font-weight:500;color:#e0e6ff;min-width:140px}
-.email-subject{font-size:13px;color:#90caf9;flex:1}
-.email-date{font-size:11px;color:#607d8b;white-space:nowrap}
-.email-unread .email-from{color:#29b6f6}
-.email-unread .email-subject{color:#e0e6ff;font-weight:500}
-.badge{font-size:10px;padding:2px 7px;border-radius:10px}
-.badge-blue{background:#1a2a3e;color:#64b5f6}
-.badge-green{background:#1a3e2a;color:#81c784}
-.badge-red{background:#3e1a1a;color:#f48fb1}
-.badge-orange{background:#3e2a1a;color:#ffb74d}
-.template-item{padding:10px;border:1px solid #1e3a5f;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:.2s}
-.template-item:hover{background:#1a2a3e;border-color:#29b6f6}
-.template-title{font-size:13px;font-weight:500;color:#29b6f6}
-.template-preview{font-size:11px;color:#607d8b;margin-top:3px}
+.email-from{font-size:12px;font-weight:700;font-family:'Syne',sans-serif;color:var(--text);min-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.email-subject{font-size:12px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.email-date{font-size:11px;color:var(--muted);white-space:nowrap}
+.email-unread .email-from{color:var(--accent)}
+.email-unread .email-subject{color:var(--text);font-weight:500}
+.badge{font-size:10px;padding:2px 7px;border-radius:6px;font-family:'Syne',sans-serif;font-weight:700}
+.badge-blue{background:rgba(56,189,248,0.12);color:var(--blue)}
+.badge-green{background:rgba(6,214,160,0.12);color:var(--green)}
+.badge-red{background:rgba(255,77,109,0.12);color:var(--accent)}
+.badge-orange{background:rgba(251,146,60,0.12);color:var(--orange)}
+.template-item{padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:.15s;background:var(--surface2)}
+.template-item:hover{border-color:var(--accent);background:rgba(255,77,109,0.05)}
+.template-title{font-size:12px;font-weight:700;font-family:'Syne',sans-serif;color:var(--accent)}
+.template-preview{font-size:11px;color:var(--muted);margin-top:3px}
 .login-screen{text-align:center;padding:60px 20px}
-.login-screen h2{font-size:24px;color:#29b6f6;margin-bottom:12px}
-.login-screen p{color:#607d8b;margin-bottom:30px;font-size:14px}
+.login-screen h2{font-size:26px;font-family:'Syne',sans-serif;font-weight:800;color:var(--text);margin-bottom:6px}
+.login-screen h2 span{color:var(--accent)}
+.login-screen p{color:var(--muted);margin-bottom:30px;font-size:13px}
 .ai-msg{padding:10px 14px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;max-width:85%}
-.ai-msg.user{background:#0f3460;color:#e0e6ff;margin-left:auto;border-radius:10px 10px 2px 10px}
-.ai-msg.assistant{background:#0d1117;border:1px solid #1e3a5f;color:#e0e6ff;border-radius:2px 10px 10px 10px}
+.ai-msg.user{background:rgba(255,77,109,0.15);color:var(--text);margin-left:auto;border-radius:10px 10px 2px 10px;border:1px solid rgba(255,77,109,0.2)}
+.ai-msg.assistant{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:2px 10px 10px 10px}
 .chat-area{max-height:300px;overflow-y:auto;margin-bottom:10px}
 .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-.stat{background:#060d14;border:1px solid #1e3a5f;border-radius:10px;padding:12px;text-align:center}
-.stat .val{font-size:22px;font-weight:600;color:#29b6f6}
-.stat .lbl{font-size:11px;color:#607d8b;margin-top:2px}
-.loading{text-align:center;padding:20px;color:#607d8b;font-size:13px}
-.email-view{background:#060d14;border:1px solid #1e3a5f;border-radius:10px;padding:16px;margin-top:10px;display:none}
-.email-view-header{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1e3a5f}
-.email-view-from{font-size:14px;font-weight:500;color:#29b6f6}
-.email-view-subject{font-size:16px;font-weight:600;color:#e0e6ff;margin:4px 0}
-.email-view-date{font-size:11px;color:#607d8b}
-.email-view-body{font-size:13px;color:#cdd6f4;line-height:1.7;white-space:pre-wrap}
+.stat{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.stat .val{font-size:22px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent)}
+.stat .lbl{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;font-family:'Syne',sans-serif}
+.loading{text-align:center;padding:20px;color:var(--muted);font-size:13px}
+.email-view{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:10px;display:none}
+.email-view-header{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.email-view-from{font-size:13px;font-weight:700;font-family:'Syne',sans-serif;color:var(--accent)}
+.email-view-subject{font-size:15px;font-weight:800;font-family:'Syne',sans-serif;color:var(--text);margin:4px 0}
+.email-view-date{font-size:11px;color:var(--muted)}
+.email-view-body{font-size:13px;color:var(--text);line-height:1.8;white-space:pre-wrap}
 .typing{display:inline-flex;gap:4px;align-items:center}
-.typing span{width:6px;height:6px;border-radius:50%;background:#29b6f6;animation:blink 1.2s infinite}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:blink 1.2s infinite}
 .typing span:nth-child(2){animation-delay:.2s}
 .typing span:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
-.notif-item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #1a2a3e}
-.notif-dot{width:8px;height:8px;border-radius:50%;background:#29b6f6;margin-top:5px;flex-shrink:0}
+.notif-item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border)}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0}
 </style>
 </head>
 <body>
 
 <div id="login-screen" class="login-screen">
   <div style="font-size:48px;margin-bottom:16px">📧</div>
-  <h2>Email Master Tool</h2>
+  <h2>Email<span>Master</span></h2>
   <p>Conecteaza-te cu Gmail pentru a accesa emailurile,<br>templates si asistentul AI</p>
   <div id="google-signin-btn" style="display:inline-block;margin:0 auto"></div>
   <p style="margin-top:20px;font-size:11px;color:#3a4a5e">Datele tale raman private. Nu stocam niciun email.</p>
@@ -86,7 +97,7 @@ label{font-size:12px;color:#90caf9;display:block;margin-bottom:4px}
 
 <div id="app" style="display:none">
   <div class="header">
-    <div class="logo">📧 Email Master Tool</div>
+    <div class="logo">📧 Email<span>Master</span></div>
     <div class="user-info">
       <div class="avatar" id="user-avatar">?</div>
       <span id="user-name">...</span>
@@ -99,6 +110,7 @@ label{font-size:12px;color:#90caf9;display:block;margin-bottom:4px}
     <div class="tab" onclick="switchTab('compose')">✏️ Scrie Email</div>
     <div class="tab" onclick="switchTab('templates')">📋 Templates</div>
     <div class="tab" onclick="switchTab('ai')">🤖 AI Assistant</div>
+    <div class="tab" onclick="switchTab('aimanager')">✨ AI Manager</div>
     <div class="tab" onclick="switchTab('organizer')">🗂️ Organizer</div>
     <div class="tab" onclick="switchTab('notificari')">🔔 Notificari</div>
   </div>
@@ -263,6 +275,67 @@ label{font-size:12px;color:#90caf9;display:block;margin-bottom:4px}
           <button class="btn btn-blue" onclick="useAIEmail()">📤 Foloseste acest email</button>
           <button class="btn btn-outline" onclick="document.getElementById('ai-email-result').style.display='none'">Inchide</button>
         </div>
+      </div>
+    </div>
+
+    <!-- AI MANAGER -->
+    <div id="aimanager" class="section">
+      <div class="card">
+        <div class="card-title">✨ AI Email Manager</div>
+        <p style="font-size:12px;color:#607d8b;margin-bottom:12px">Analizeaza, sorteaza, curata si rezuma inbox-ul cu AI</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn-blue" onclick="aiSortEmails()" style="width:100%">🔀 Sorteaza cu AI</button>
+          <button class="btn btn-blue" onclick="aiSummarizeInbox()" style="width:100%">📋 Rezuma Inbox</button>
+          <button class="btn btn-blue" onclick="aiDetectSpam()" style="width:100%">🗑️ Detecteaza Spam</button>
+          <button class="btn btn-blue" onclick="aiUrgentEmails()" style="width:100%">🚨 Emailuri Urgente</button>
+          <button class="btn btn-blue" onclick="aiSmartSearch()" style="width:100%;grid-column:span 2">🔍 Cauta Inteligent cu AI</button>
+        </div>
+      </div>
+
+      <div class="card" id="ai-manager-loading" style="display:none">
+        <div style="text-align:center;padding:20px;color:#607d8b">
+          <div class="typing" style="justify-content:center"><span></span><span></span><span></span></div>
+          <div style="margin-top:8px;font-size:13px" id="ai-manager-loading-text">AI analizeaza emailurile...</div>
+        </div>
+      </div>
+
+      <div class="card" id="ai-manager-result" style="display:none">
+        <div class="card-title" id="ai-manager-result-title">Rezultat AI</div>
+        <div id="ai-manager-result-content" style="font-size:13px;line-height:1.8;color:#cdd6f4;white-space:pre-wrap"></div>
+      </div>
+
+      <div class="card" id="ai-sorted-list" style="display:none">
+        <div class="card-title">📊 Emailuri Sortate de AI</div>
+        <div id="ai-sorted-urgent" style="margin-bottom:12px">
+          <div style="font-size:12px;font-weight:600;color:#f48fb1;margin-bottom:6px">🚨 URGENT</div>
+          <div id="ai-urgent-list"></div>
+        </div>
+        <div id="ai-sorted-important" style="margin-bottom:12px">
+          <div style="font-size:12px;font-weight:600;color:#ffb74d;margin-bottom:6px">⭐ IMPORTANT</div>
+          <div id="ai-important-list"></div>
+        </div>
+        <div id="ai-sorted-normal" style="margin-bottom:12px">
+          <div style="font-size:12px;font-weight:600;color:#81c784;margin-bottom:6px">✅ NORMAL</div>
+          <div id="ai-normal-list"></div>
+        </div>
+        <div id="ai-sorted-newsletter">
+          <div style="font-size:12px;font-weight:600;color:#607d8b;margin-bottom:6px">📧 NEWSLETTER/SPAM</div>
+          <div id="ai-newsletter-list"></div>
+        </div>
+      </div>
+
+      <div class="card" id="ai-smart-search-card" style="display:none">
+        <div class="card-title">🔍 Cautare Inteligenta AI</div>
+        <p style="font-size:12px;color:#607d8b;margin-bottom:8px">Scrie ce cauti in cuvinte normale, nu cuvinte cheie exacte</p>
+        <input type="text" id="smart-search-input" placeholder="Ex: emailuri despre bani, clienti care nu au platit, oferte...">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 8px" onclick="quickSearch('emailuri despre plati si facturi')">Plati/Facturi</button>
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 8px" onclick="quickSearch('emailuri urgente care necesita raspuns')">Necesita raspuns</button>
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 8px" onclick="quickSearch('emailuri de la clienti')">De la clienti</button>
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 8px" onclick="quickSearch('newslettere si reclame de sters')">De sters</button>
+        </div>
+        <button class="btn btn-blue" onclick="doSmartSearch()" style="width:100%">Cauta</button>
+        <div id="smart-search-results" style="margin-top:10px"></div>
       </div>
     </div>
 
@@ -542,22 +615,12 @@ async function viewEmail(id) {
     document.getElementById('view-date').textContent = new Date(parseInt(data.internalDate)).toLocaleString('ro');
 
     const viewBody = document.getElementById('view-body');
-    if (htmlBody) {
-      viewBody.innerHTML = '';
-      const iframe = document.createElement('iframe');
-      iframe.style.cssText = 'width:100%;border:none;min-height:300px;background:#fff;border-radius:8px';
-      iframe.sandbox = 'allow-same-origin';
-      viewBody.appendChild(iframe);
-      iframe.onload = () => {
-        iframe.style.height = iframe.contentDocument.body.scrollHeight + 30 + 'px';
-      };
-      const blob = new Blob([htmlBody], {type:'text/html'});
-      iframe.src = URL.createObjectURL(blob);
-    } else {
-      viewBody.innerHTML = '';
-      viewBody.style.whiteSpace = 'pre-wrap';
-      viewBody.textContent = body || data.snippet;
-    }
+    viewBody.innerHTML = '';
+    viewBody.style.whiteSpace = 'pre-wrap';
+    viewBody.style.lineHeight = '1.8';
+    viewBody.style.fontSize = '13px';
+    const rawContent = htmlBody || body || data.snippet;
+    viewBody.textContent = cleanEmailBody(rawContent);
     document.getElementById('email-view').style.display = 'block';
     document.getElementById('email-view').scrollIntoView({behavior:'smooth'});
     
@@ -567,6 +630,43 @@ async function viewEmail(id) {
   } catch(e) {
     alert('Nu s-a putut incarca emailul.');
   }
+}
+
+function cleanEmailBody(html) {
+  if (!html) return '';
+  let text = html;
+  // Sterge style si script blocks complet
+  text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  text = text.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+  // Inlocuieste taguri comune cu text curat
+  text = text.replace(/<br\s*\/?>/gi, '\n');
+  text = text.replace(/<\/p>/gi, '\n\n');
+  text = text.replace(/<\/div>/gi, '\n');
+  text = text.replace(/<\/tr>/gi, '\n');
+  text = text.replace(/<\/td>/gi, ' ');
+  text = text.replace(/<\/th>/gi, ' ');
+  text = text.replace(/<li[^>]*>/gi, '• ');
+  text = text.replace(/<\/li>/gi, '\n');
+  text = text.replace(/<h[1-6][^>]*>/gi, '\n');
+  text = text.replace(/<\/h[1-6]>/gi, '\n');
+  // Sterge toate tagurile HTML ramase
+  text = text.replace(/<[^>]+>/g, '');
+  // Decodifica entitati HTML
+  text = text.replace(/&nbsp;/g, ' ');
+  text = text.replace(/&amp;/g, '&');
+  text = text.replace(/&lt;/g, '<');
+  text = text.replace(/&gt;/g, '>');
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&#39;/g, "'");
+  text = text.replace(/&[a-z]+;/gi, ' ');
+  text = text.replace(/&#[0-9]+;/g, ' ');
+  // Curata spatii si linii goale multiple
+  text = text.replace(/\t/g, ' ');
+  text = text.replace(/ {2,}/g, ' ');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  text = text.trim();
+  return text;
 }
 
 function formatFrom(from) {
@@ -878,6 +978,114 @@ function useAIEmail() {
   switchTab('compose');
 }
 
+// ============================================================
+// AI MANAGER
+// ============================================================
+function showAILoading(text) {
+  document.getElementById('ai-manager-loading-text').textContent = text || 'AI analizeaza...';
+  document.getElementById('ai-manager-loading').style.display = 'block';
+  document.getElementById('ai-manager-result').style.display = 'none';
+  document.getElementById('ai-sorted-list').style.display = 'none';
+}
+function hideAILoading() {
+  document.getElementById('ai-manager-loading').style.display = 'none';
+}
+function showAIResult(title, content) {
+  hideAILoading();
+  document.getElementById('ai-manager-result-title').textContent = title;
+  document.getElementById('ai-manager-result-content').textContent = content;
+  document.getElementById('ai-manager-result').style.display = 'block';
+  document.getElementById('ai-manager-result').scrollIntoView({behavior:'smooth'});
+}
+
+async function aiSortEmails() {
+  if (!allEmails.length) { alert('Incarca emailurile mai intai din Inbox!'); return; }
+  showAILoading('AI sorteaza ' + allEmails.length + ' emailuri...');
+  const emailList = allEmails.slice(0,30).map((e,i)=>`${i+1}. De la: ${formatFrom(e.from)} | Subiect: ${e.subject} | ${e.snippet.substring(0,80)}`).join('\n');
+  const prompt = `Analizeaza aceste emailuri de business si sorteaza-le in 4 categorii. Raspunde DOAR cu JSON valid:
+{"urgent":[1,5],"important":[2,3],"normal":[4,6],"newsletter":[7,8]}
+unde numerele sunt indexii emailurilor (1-based).
+Criterii: urgent=plati/termene, important=clienti/business, normal=info generale, newsletter=promotii/reclame
+Emailuri:\n${emailList}`;
+  const result = await callAI(prompt);
+  hideAILoading();
+  if (!result) { showAIResult('Eroare','Nu s-a putut analiza.'); return; }
+  try {
+    const sorted = JSON.parse(result.replace(/```json|```/g,'').trim());
+    const renderList = (indices, id) => {
+      const el = document.getElementById(id);
+      if (!indices||!indices.length){el.innerHTML='<div style="font-size:12px;color:#3a4a5e;padding:4px">Niciun email</div>';return;}
+      el.innerHTML = indices.map(i=>{const e=allEmails[i-1];if(!e)return'';return`<div class="email-item" onclick="viewEmail('${e.id}')"><div style="flex:1"><div style="font-size:13px;font-weight:500">${formatFrom(e.from)}</div><div style="font-size:12px;color:#90caf9">${e.subject}</div></div><div style="font-size:11px;color:#607d8b">${formatDate(e.date)}</div></div>`;}).join('');
+    };
+    renderList(sorted.urgent,'ai-urgent-list');
+    renderList(sorted.important,'ai-important-list');
+    renderList(sorted.normal,'ai-normal-list');
+    renderList(sorted.newsletter,'ai-newsletter-list');
+    document.getElementById('ai-sorted-list').style.display='block';
+    document.getElementById('ai-sorted-list').scrollIntoView({behavior:'smooth'});
+  } catch(e) { showAIResult('Sortare AI', result); }
+}
+
+async function aiSummarizeInbox() {
+  if (!allEmails.length) { alert('Incarca emailurile mai intai!'); return; }
+  showAILoading('AI rezuma inbox-ul...');
+  const emailList = allEmails.slice(0,20).map((e,i)=>`${i+1}. De la: ${formatFrom(e.from)} | Subiect: ${e.subject} | ${e.unread?'NECITIT':''} | ${e.snippet.substring(0,100)}`).join('\n');
+  const prompt = `Analizeaza inbox-ul si da un rezumat executiv in romana. Include:\n1. Ce este URGENT azi\n2. Ce asteapta raspuns\n3. Emailuri importante\n4. Ce poate fi sters\n5. Sugestii\nFii concis si practic.\nEmailuri:\n${emailList}`;
+  const result = await callAI(prompt);
+  hideAILoading();
+  if (result) showAIResult('📋 Rezumat Inbox', result);
+}
+
+async function aiDetectSpam() {
+  if (!allEmails.length) { alert('Incarca emailurile mai intai!'); return; }
+  showAILoading('AI detecteaza spam si newslettere...');
+  const emailList = allEmails.slice(0,50).map((e,i)=>`${i+1}. De la: ${formatFrom(e.from)} (${e.from.match(/@([^>]+)/)?.[1]||''}) | Subiect: ${e.subject}`).join('\n');
+  const prompt = `Analizeaza aceste emailuri si identifica:\n1. Newslettere si promotii de dezabonat\n2. Spam probabil\n3. Expeditori de blocat\n4. Emailuri de sters\nRaspunde in romana, structurat.\nEmailuri:\n${emailList}`;
+  const result = await callAI(prompt);
+  hideAILoading();
+  if (result) showAIResult('🗑️ Spam/Newsletter detectat', result);
+}
+
+async function aiUrgentEmails() {
+  if (!allEmails.length) { alert('Incarca emailurile mai intai!'); return; }
+  showAILoading('AI cauta emailurile urgente...');
+  const emailList = allEmails.slice(0,30).map((e,i)=>`${i+1}. De la: ${formatFrom(e.from)} | Subiect: ${e.subject} | ${e.unread?'NECITIT':''} | ${e.snippet.substring(0,120)}`).join('\n');
+  const prompt = `Din aceste emailuri, ce este URGENT si necesita actiune IMEDIATA azi? Cauta: plati scadente, termene limita, clienti care asteapta, probleme urgente. Explica ce actiune trebuie luata pentru fiecare. Raspunde in romana, concis.\nEmailuri:\n${emailList}`;
+  const result = await callAI(prompt);
+  hideAILoading();
+  if (result) showAIResult('🚨 Emailuri Urgente', result);
+}
+
+function aiSmartSearch() {
+  document.getElementById('ai-smart-search-card').style.display='block';
+  document.getElementById('ai-smart-search-card').scrollIntoView({behavior:'smooth'});
+}
+function quickSearch(q) {
+  document.getElementById('smart-search-input').value=q;
+  doSmartSearch();
+}
+async function doSmartSearch() {
+  const query = document.getElementById('smart-search-input').value.trim();
+  if (!query){alert('Scrie ce cauti!');return;}
+  if (!allEmails.length){alert('Incarca emailurile mai intai!');return;}
+  const resultsEl = document.getElementById('smart-search-results');
+  resultsEl.innerHTML='<div style="color:#607d8b;font-size:13px">AI cauta...</div>';
+  const emailList = allEmails.slice(0,50).map((e,i)=>`${i+1}. De la: ${formatFrom(e.from)} | Subiect: ${e.subject} | ${e.snippet.substring(0,100)}`).join('\n');
+  const prompt = `Cauta in aceste emailuri: "${query}"\nReturneaza DOAR JSON: {"results":[1,5,8]}\nEmailuri:\n${emailList}`;
+  const result = await callAI(prompt);
+  try {
+    const data = JSON.parse(result.replace(/```json|```/g,'').trim());
+    if (data.results&&data.results.length) {
+      resultsEl.innerHTML=`<div style="font-size:12px;color:#29b6f6;margin-bottom:8px">Gasit ${data.results.length} emailuri:</div>`+
+        data.results.map(i=>{const e=allEmails[i-1];if(!e)return'';return`<div class="email-item" onclick="viewEmail('${e.id}');switchTab('inbox')"><div style="flex:1"><div style="font-size:13px;font-weight:500">${formatFrom(e.from)}</div><div style="font-size:12px;color:#90caf9">${e.subject}</div></div><div style="font-size:11px;color:#607d8b">${formatDate(e.date)}</div></div>`;}).join('');
+    } else {
+      resultsEl.innerHTML='<div style="color:#607d8b;font-size:13px">Niciun email relevant gasit.</div>';
+    }
+  } catch(e) {
+    resultsEl.innerHTML=`<div style="color:#cdd6f4;font-size:13px;white-space:pre-wrap">${result}</div>`;
+  }
+}
+
 async function callAI(prompt, history) {
   try {
     const messages = history ? history : [{role:'user', content: prompt}];
@@ -1044,7 +1252,7 @@ function addNotifLog(msg) {
 // UI
 // ============================================================
 function switchTab(tab) {
-  const tabs = ['inbox','compose','templates','ai','organizer','notificari'];
+  const tabs = ['inbox','compose','templates','ai','aimanager','organizer','notificari'];
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', tabs[i] === tab));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(tab).classList.add('active');
