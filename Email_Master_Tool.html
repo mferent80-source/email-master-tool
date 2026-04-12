@@ -83,6 +83,19 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;font-fam
 @keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
 .notif-item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border)}
 .notif-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0}
+
+/* LIGHT THEME */
+[data-theme="light"]{
+  --bg:#f4f4f8;--surface:#ffffff;--surface2:#f0f0f5;--border:#e0e0ea;
+  --text:#1a1a2e;--muted:#8888a0;
+}
+[data-theme="light"] body{background:var(--bg)}
+[data-theme="light"] input,[data-theme="light"] textarea,[data-theme="light"] select{background:var(--surface);color:var(--text)}
+
+/* EMAIL VIEW INLINE */
+.email-view-inline{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:6px;margin-bottom:6px;display:none;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.email-view-inline.open{display:block}
 </style>
 </head>
 <body>
@@ -99,8 +112,9 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;font-fam
   <div class="header">
     <div class="logo">📧 Email<span>Master</span></div>
     <div class="user-info">
+      <button class="btn btn-outline" style="padding:5px 10px;font-size:16px;border:none;background:transparent" onclick="toggleTheme()" id="theme-btn" title="Schimba tema">🌙</button>
       <div class="avatar" id="user-avatar">?</div>
-      <span id="user-name">...</span>
+      <span id="user-name" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">...</span>
       <button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="signOut()">Logout</button>
     </div>
   </div>
@@ -133,18 +147,6 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;font-fam
           </div>
         </div>
         <div id="emails-list"><div class="loading">Apasa Refresh pentru a incarca emailurile...</div></div>
-      </div>
-      <div class="email-view" id="email-view">
-        <div class="email-view-header">
-          <div class="email-view-from" id="view-from"></div>
-          <div class="email-view-subject" id="view-subject"></div>
-          <div class="email-view-date" id="view-date"></div>
-        </div>
-        <div class="email-view-body" id="view-body"></div>
-        <div class="btn-row" style="margin-top:12px">
-          <button class="btn btn-blue" onclick="replyWithAI()">🤖 Raspunde cu AI</button>
-          <button class="btn btn-outline" onclick="document.getElementById('email-view').style.display='none'">Inchide</button>
-        </div>
       </div>
     </div>
 
@@ -542,15 +544,19 @@ function renderEmails(emails) {
     return;
   }
   document.getElementById('emails-list').innerHTML = emails.map(e => `
-    <div class="email-item ${e.unread ? 'email-unread' : ''}" onclick="viewEmail('${e.id}')">
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-          <div class="email-from">${formatFrom(e.from)}</div>
-          <div class="email-date">${formatDate(e.date)}</div>
+    <div>
+      <div class="email-item ${e.unread ? 'email-unread' : ''}" onclick="toggleEmailInline('${e.id}', this)" id="item-${e.id}">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <div class="email-from">${formatFrom(e.from)}</div>
+            <div class="email-date">${formatDate(e.date)}</div>
+          </div>
+          <div class="email-subject">${e.subject}</div>
+          <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.snippet}</div>
         </div>
-        <div class="email-subject">${e.subject}</div>
-        <div style="font-size:11px;color:#3a4a5e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.snippet}</div>
+        <div style="font-size:16px;color:var(--muted);transition:.2s" id="arrow-${e.id}">›</div>
       </div>
+      <div class="email-view-inline" id="inline-${e.id}"></div>
     </div>`).join('');
 }
 
@@ -564,7 +570,99 @@ function filterEmails() {
   renderEmails(filtered);
 }
 
+async function toggleEmailInline(id, itemEl) {
+  const inlineEl = document.getElementById('inline-' + id);
+  const arrowEl = document.getElementById('arrow-' + id);
+  const isOpen = inlineEl.classList.contains('open');
+
+  // Inchide toate celelalte
+  document.querySelectorAll('.email-view-inline.open').forEach(el => {
+    el.classList.remove('open');
+    el.innerHTML = '';
+  });
+  document.querySelectorAll('[id^="arrow-"]').forEach(el => {
+    el.textContent = '›';
+    el.style.transform = '';
+    el.style.color = 'var(--muted)';
+  });
+
+  if (isOpen) return; // toggle inchide daca era deschis
+
+  arrowEl.textContent = '›';
+  arrowEl.style.transform = 'rotate(90deg)';
+  arrowEl.style.color = 'var(--accent)';
+  inlineEl.innerHTML = '<div class="loading">Se incarca...</div>';
+  inlineEl.classList.add('open');
+
+  try {
+    const res = await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`, {
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    });
+    const data = await res.json();
+    const headers = data.payload.headers;
+    const get = (name) => (headers.find(h => h.name === name) || {}).value || '';
+
+    let body = '', htmlBody = '';
+    const getBody = (parts) => {
+      if (!parts) return '';
+      for (const part of parts) {
+        if (part.mimeType === 'text/plain' && part.body.data)
+          return atob(part.body.data.replace(/-/g,'+').replace(/_/g,'/'));
+        if (part.parts) { const s = getBody(part.parts); if (s) return s; }
+      }
+      return '';
+    };
+    const getHtmlBody = (parts) => {
+      if (!parts) return '';
+      for (const part of parts) {
+        if (part.mimeType === 'text/html' && part.body.data)
+          return atob(part.body.data.replace(/-/g,'+').replace(/_/g,'/'));
+        if (part.parts) { const s = getHtmlBody(part.parts); if (s) return s; }
+      }
+      return '';
+    };
+
+    if (data.payload.body && data.payload.body.data) {
+      body = atob(data.payload.body.data.replace(/-/g,'+').replace(/_/g,'/'));
+    } else if (data.payload.parts) {
+      htmlBody = getHtmlBody(data.payload.parts);
+      if (!htmlBody) body = getBody(data.payload.parts);
+    }
+
+    const rawContent = htmlBody || body || data.snippet;
+    const cleaned = cleanEmailBody(rawContent);
+
+    window._currentEmailSubject = get('Subject');
+    window._currentEmailFrom = get('From');
+    window._currentEmailBody = cleaned;
+
+    inlineEl.innerHTML = `
+      <div style="padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;font-family:'Syne',sans-serif;color:var(--accent)">${get('From')}</div>
+        <div style="font-size:14px;font-weight:800;font-family:'Syne',sans-serif;color:var(--text);margin:4px 0">${get('Subject')}</div>
+        <div style="font-size:11px;color:var(--muted)">${new Date(parseInt(data.internalDate)).toLocaleString('ro')}</div>
+      </div>
+      <div style="font-size:13px;color:var(--text);line-height:1.8;white-space:pre-wrap;max-height:400px;overflow-y:auto">${cleaned}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn btn-blue" style="font-size:11px;padding:6px 12px" onclick="replyWithAI()">🤖 Raspunde cu AI</button>
+        <button class="btn btn-outline" style="font-size:11px;padding:6px 12px" onclick="prefillReply('${id}')">↩️ Raspunde</button>
+        <button class="btn btn-outline" style="font-size:11px;padding:6px 12px" onclick="toggleEmailInline('${id}', null)">✕ Inchide</button>
+      </div>`;
+  } catch(e) {
+    inlineEl.innerHTML = '<div class="loading">Eroare la incarcare.</div>';
+  }
+}
+
+function prefillReply(id) {
+  document.getElementById('compose-to').value = window._currentEmailFrom || '';
+  document.getElementById('compose-subject').value = 'Re: ' + (window._currentEmailSubject || '');
+  document.getElementById('compose-body').value = '\n\n---\nDe la: ' + (window._currentEmailFrom || '') + '\n' + (window._currentEmailBody || '').substring(0, 200) + '...';
+  switchTab('compose');
+}
+
 async function viewEmail(id) {
+  toggleEmailInline(id, null);
+}
   try {
     const res = await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`, {
       headers: { 'Authorization': 'Bearer ' + accessToken }
@@ -1002,20 +1100,24 @@ async function aiSortEmails() {
   if (!allEmails.length) { alert('Incarca emailurile mai intai din Inbox!'); return; }
   showAILoading('AI sorteaza ' + allEmails.length + ' emailuri...');
   const emailList = allEmails.slice(0,30).map((e,i)=>`${i+1}. De la: ${formatFrom(e.from)} | Subiect: ${e.subject} | ${e.snippet.substring(0,80)}`).join('\n');
-  const prompt = `Analizeaza aceste emailuri de business si sorteaza-le in 4 categorii. Raspunde DOAR cu JSON valid:
+  const prompt = `Sorteaza aceste emailuri in 4 categorii. Returneaza DOAR obiectul JSON, fara text suplimentar, fara markdown:
 {"urgent":[1,5],"important":[2,3],"normal":[4,6],"newsletter":[7,8]}
-unde numerele sunt indexii emailurilor (1-based).
-Criterii: urgent=plati/termene, important=clienti/business, normal=info generale, newsletter=promotii/reclame
-Emailuri:\n${emailList}`;
-  const result = await callAI(prompt);
+Numerele sunt indexii (1-based). Criterii: urgent=plati/termene scadente, important=clienti/business, normal=info, newsletter=promotii/reclame
+Emailuri:
+${emailList}`;
+  const result = await callAIRaw(prompt, 'Esti un clasificator de emailuri. Raspunzi DOAR cu JSON valid, fara explicatii, fara markdown, fara backticks.');
   hideAILoading();
-  if (!result) { showAIResult('Eroare','Nu s-a putut analiza.'); return; }
+  if (!result) { showAIResult('Eroare','Nu s-a putut conecta la AI. Incearca din nou.'); return; }
   try {
-    const sorted = JSON.parse(result.replace(/```json|```/g,'').trim());
+    const clean = result.replace(/```json|```/g,'').replace(/[\r\n]/g,'').trim();
+    const start = clean.indexOf('{');
+    const end = clean.lastIndexOf('}');
+    const jsonStr = clean.substring(start, end+1);
+    const sorted = JSON.parse(jsonStr);
     const renderList = (indices, id) => {
       const el = document.getElementById(id);
-      if (!indices||!indices.length){el.innerHTML='<div style="font-size:12px;color:#3a4a5e;padding:4px">Niciun email</div>';return;}
-      el.innerHTML = indices.map(i=>{const e=allEmails[i-1];if(!e)return'';return`<div class="email-item" onclick="viewEmail('${e.id}')"><div style="flex:1"><div style="font-size:13px;font-weight:500">${formatFrom(e.from)}</div><div style="font-size:12px;color:#90caf9">${e.subject}</div></div><div style="font-size:11px;color:#607d8b">${formatDate(e.date)}</div></div>`;}).join('');
+      if (!indices||!indices.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);padding:4px">Niciun email</div>';return;}
+      el.innerHTML = indices.map(i=>{const e=allEmails[i-1];if(!e)return'';return`<div class="email-item" onclick="toggleEmailInline('${e.id}',null);switchTab('inbox')"><div style="flex:1"><div style="font-size:12px;font-weight:700;font-family:'Syne',sans-serif">${formatFrom(e.from)}</div><div style="font-size:12px;color:var(--muted)">${e.subject}</div></div><div style="font-size:11px;color:var(--muted)">${formatDate(e.date)}</div></div>`;}).join('');
     };
     renderList(sorted.urgent,'ai-urgent-list');
     renderList(sorted.important,'ai-important-list');
@@ -1023,7 +1125,9 @@ Emailuri:\n${emailList}`;
     renderList(sorted.newsletter,'ai-newsletter-list');
     document.getElementById('ai-sorted-list').style.display='block';
     document.getElementById('ai-sorted-list').scrollIntoView({behavior:'smooth'});
-  } catch(e) { showAIResult('Sortare AI', result); }
+  } catch(e) {
+    showAIResult('Rezultat AI', result);
+  }
 }
 
 async function aiSummarizeInbox() {
@@ -1031,9 +1135,10 @@ async function aiSummarizeInbox() {
   showAILoading('AI rezuma inbox-ul...');
   const emailList = allEmails.slice(0,20).map((e,i)=>`${i+1}. De la: ${formatFrom(e.from)} | Subiect: ${e.subject} | ${e.unread?'NECITIT':''} | ${e.snippet.substring(0,100)}`).join('\n');
   const prompt = `Analizeaza inbox-ul si da un rezumat executiv in romana. Include:\n1. Ce este URGENT azi\n2. Ce asteapta raspuns\n3. Emailuri importante\n4. Ce poate fi sters\n5. Sugestii\nFii concis si practic.\nEmailuri:\n${emailList}`;
-  const result = await callAI(prompt);
+  const result = await callAIRaw(prompt, 'Esti un asistent de email. Raspunzi in romana, concis si practic.');
   hideAILoading();
   if (result) showAIResult('📋 Rezumat Inbox', result);
+  else showAIResult('Eroare', 'Nu s-a putut conecta la AI.');
 }
 
 async function aiDetectSpam() {
@@ -1041,9 +1146,10 @@ async function aiDetectSpam() {
   showAILoading('AI detecteaza spam si newslettere...');
   const emailList = allEmails.slice(0,50).map((e,i)=>`${i+1}. De la: ${formatFrom(e.from)} (${e.from.match(/@([^>]+)/)?.[1]||''}) | Subiect: ${e.subject}`).join('\n');
   const prompt = `Analizeaza aceste emailuri si identifica:\n1. Newslettere si promotii de dezabonat\n2. Spam probabil\n3. Expeditori de blocat\n4. Emailuri de sters\nRaspunde in romana, structurat.\nEmailuri:\n${emailList}`;
-  const result = await callAI(prompt);
+  const result = await callAIRaw(prompt, 'Esti un filtru de spam. Raspunzi in romana, structurat si clar.');
   hideAILoading();
   if (result) showAIResult('🗑️ Spam/Newsletter detectat', result);
+  else showAIResult('Eroare', 'Nu s-a putut conecta la AI.');
 }
 
 async function aiUrgentEmails() {
@@ -1051,9 +1157,10 @@ async function aiUrgentEmails() {
   showAILoading('AI cauta emailurile urgente...');
   const emailList = allEmails.slice(0,30).map((e,i)=>`${i+1}. De la: ${formatFrom(e.from)} | Subiect: ${e.subject} | ${e.unread?'NECITIT':''} | ${e.snippet.substring(0,120)}`).join('\n');
   const prompt = `Din aceste emailuri, ce este URGENT si necesita actiune IMEDIATA azi? Cauta: plati scadente, termene limita, clienti care asteapta, probleme urgente. Explica ce actiune trebuie luata pentru fiecare. Raspunde in romana, concis.\nEmailuri:\n${emailList}`;
-  const result = await callAI(prompt);
+  const result = await callAIRaw(prompt, 'Esti un asistent de prioritizare. Raspunzi in romana, concis si actionabil.');
   hideAILoading();
   if (result) showAIResult('🚨 Emailuri Urgente', result);
+  else showAIResult('Eroare', 'Nu s-a putut conecta la AI.');
 }
 
 function aiSmartSearch() {
@@ -1071,8 +1178,8 @@ async function doSmartSearch() {
   const resultsEl = document.getElementById('smart-search-results');
   resultsEl.innerHTML='<div style="color:#607d8b;font-size:13px">AI cauta...</div>';
   const emailList = allEmails.slice(0,50).map((e,i)=>`${i+1}. De la: ${formatFrom(e.from)} | Subiect: ${e.subject} | ${e.snippet.substring(0,100)}`).join('\n');
-  const prompt = `Cauta in aceste emailuri: "${query}"\nReturneaza DOAR JSON: {"results":[1,5,8]}\nEmailuri:\n${emailList}`;
-  const result = await callAI(prompt);
+  const prompt = `Cauta in aceste emailuri: "${query}"\nReturneaza DOAR JSON fara text: {"results":[1,5,8]}\nEmailuri:\n${emailList}`;
+  const result = await callAIRaw(prompt, 'Esti un motor de cautare. Raspunzi DOAR cu JSON valid, fara explicatii.');
   try {
     const data = JSON.parse(result.replace(/```json|```/g,'').trim());
     if (data.results&&data.results.length) {
@@ -1099,6 +1206,23 @@ async function callAI(prompt, history) {
         max_tokens: 1000,
         system,
         messages
+      })
+    });
+    const data = await res.json();
+    return data.content?.[0]?.text || null;
+  } catch(e) { return null; }
+}
+
+async function callAIRaw(prompt, systemPrompt) {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt || 'Esti un asistent util. Raspunzi concis si direct.',
+        messages: [{role:'user', content: prompt}]
       })
     });
     const data = await res.json();
@@ -1244,8 +1368,44 @@ function addNotifLog(msg) {
   
   const div = document.createElement('div');
   div.className = 'notif-item';
-  div.innerHTML = `<div class="notif-dot"></div><div><div style="font-size:13px">${msg}</div><div style="font-size:11px;color:#607d8b">${new Date().toLocaleTimeString('ro')}</div></div>`;
+  div.innerHTML = `<div class="notif-dot"></div><div><div style="font-size:13px">${msg}</div><div style="font-size:11px;color:var(--muted)">${new Date().toLocaleTimeString('ro')}</div></div>`;
   list.insertBefore(div, list.firstChild);
+
+  // Update badge pe tab
+  updateNotifBadge();
+}
+
+let notifCount = 0;
+function updateNotifBadge() {
+  notifCount++;
+  const tabs = document.querySelectorAll('.tab');
+  const notifTab = tabs[6]; // tab notificari
+  if (notifTab && !notifTab.classList.contains('active')) {
+    notifTab.innerHTML = `🔔 Notificari <span style="background:var(--accent);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">${notifCount}</span>`;
+  }
+}
+
+// ============================================================
+// THEME
+// ============================================================
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('theme-btn').textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('emt-theme', isDark ? 'light' : 'dark');
+}
+
+// Restaureaza tema salvata
+const savedTheme = localStorage.getItem('emt-theme');
+if (savedTheme) {
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  if (savedTheme === 'light') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('theme-btn');
+      if (btn) btn.textContent = '☀️';
+    });
+  }
 }
 
 // ============================================================
@@ -1253,7 +1413,13 @@ function addNotifLog(msg) {
 // ============================================================
 function switchTab(tab) {
   const tabs = ['inbox','compose','templates','ai','aimanager','organizer','notificari'];
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', tabs[i] === tab));
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', tabs[i] === tab);
+    if (tabs[i] === 'notificari' && tab === 'notificari') {
+      t.innerHTML = '🔔 Notificari';
+      notifCount = 0;
+    }
+  });
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(tab).classList.add('active');
 }
