@@ -412,7 +412,7 @@ async function loadEmails() {
   document.getElementById('emails-list').innerHTML = '<div class="loading">Se incarca emailurile...</div>';
   
   try {
-    const res = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=30&labelIds=INBOX', {
+    const res = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=100&labelIds=INBOX', {
       headers: { 'Authorization': 'Bearer ' + accessToken }
     });
     const data = await res.json();
@@ -422,7 +422,7 @@ async function loadEmails() {
       return;
     }
 
-    const emails = await Promise.all(data.messages.slice(0, 20).map(m => fetchEmail(m.id)));
+    const emails = await Promise.all(data.messages.slice(0, 100).map(m => fetchEmail(m.id)));
     allEmails = emails.filter(Boolean);
     
     const unread = allEmails.filter(e => e.unread).length;
@@ -515,16 +515,49 @@ async function viewEmail(id) {
       return '';
     };
     
+    let htmlBody = '';
+    const getHtmlBody = (parts) => {
+      if (!parts) return '';
+      for (const part of parts) {
+        if (part.mimeType === 'text/html' && part.body.data) {
+          return atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+        }
+        if (part.parts) {
+          const sub = getHtmlBody(part.parts);
+          if (sub) return sub;
+        }
+      }
+      return '';
+    };
+
     if (data.payload.body && data.payload.body.data) {
       body = atob(data.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
     } else if (data.payload.parts) {
-      body = getBody(data.payload.parts);
+      htmlBody = getHtmlBody(data.payload.parts);
+      if (!htmlBody) body = getBody(data.payload.parts);
     }
-    
+
     document.getElementById('view-from').textContent = get('From');
     document.getElementById('view-subject').textContent = get('Subject');
     document.getElementById('view-date').textContent = new Date(parseInt(data.internalDate)).toLocaleString('ro');
-    document.getElementById('view-body').textContent = body || data.snippet;
+
+    const viewBody = document.getElementById('view-body');
+    if (htmlBody) {
+      viewBody.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'width:100%;border:none;min-height:300px;background:#fff;border-radius:8px';
+      iframe.sandbox = 'allow-same-origin';
+      viewBody.appendChild(iframe);
+      iframe.onload = () => {
+        iframe.style.height = iframe.contentDocument.body.scrollHeight + 30 + 'px';
+      };
+      const blob = new Blob([htmlBody], {type:'text/html'});
+      iframe.src = URL.createObjectURL(blob);
+    } else {
+      viewBody.innerHTML = '';
+      viewBody.style.whiteSpace = 'pre-wrap';
+      viewBody.textContent = body || data.snippet;
+    }
     document.getElementById('email-view').style.display = 'block';
     document.getElementById('email-view').scrollIntoView({behavior:'smooth'});
     
