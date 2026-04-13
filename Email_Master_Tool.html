@@ -672,7 +672,7 @@ function cleanEmailBody(html) {
   let text = html;
   // Sterge style si script blocks complet
   text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-  text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  text = text.replace(/<scr' + 'ipt[^>]*>[\s\S]*?<\/scr' + 'ipt>/gi, '');
   text = text.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
   // Inlocuieste taguri comune cu text curat
   text = text.replace(/<br\s*\/?>/gi, '\n');
@@ -1155,14 +1155,6 @@ async function callAIRaw(prompt, systemPrompt) {
     const GEMINI_KEY = 'AIzaSyAUh5PREV7zzeRZo6amlDNVIrTqhCwFMnI';
     const fullPrompt = (systemPrompt || 'Esti un asistent util.') + '\n\n' + prompt;
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({contents:[{parts:[{text: fullPrompt}]}]})
-    });
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  } catch(e) { return null; }
-}
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({contents:[{parts:[{text: fullPrompt}]}]})
