@@ -434,13 +434,13 @@ let keywords = ['factura', 'urgent', 'plata', 'debit', 'scadent'];
 // AUTH
 // ============================================================
 function startLogin() {
+  const REDIRECT = 'https://mferent80-source.github.io/email-master-tool/Email_Master_Tool.html';
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
-    redirect_uri: window.location.href.split('?')[0].split('#')[0],
+    redirect_uri: REDIRECT,
     response_type: 'token',
     scope: SCOPES,
-    include_granted_scopes: 'true',
-    state: 'email_master'
+    include_granted_scopes: 'true'
   });
   window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
 }
