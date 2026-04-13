@@ -500,7 +500,11 @@ async function loadEmails() {
       return;
     }
 
-    const emails = await Promise.all(data.messages.slice(0, 100).map(m => fetchEmail(m.id)));
+    const emails = [];
+    for (const m of data.messages.slice(0, 20)) {
+      const email = await fetchEmail(m.id);
+      if (email) emails.push(email);
+    }
     allEmails = emails.filter(Boolean);
     
     const unread = allEmails.filter(e => e.unread).length;
@@ -1132,7 +1136,7 @@ async function doSmartSearch() {
 
 async function callAI(prompt, history) {
   try {
-    const GEMINI_KEY = 'AIzaSyAUh5PREV7zzeRZo6amlDNVIrTqhCwFMnI';
+    const GEMINI_KEY = 'AIzaSyBNJtXMM1XbJNnnfzJQOcNga8DcDjG1M14';
     const system = 'Esti un asistent profesional de email pentru o afacere din Romania. Scrii emailuri profesionale in romana, cu ton formal dar prietenos. Cand generezi un email, include intotdeauna "Subiect: [subiect]" la inceput, urmat de continutul emailului.';
     let fullPrompt = system + '\n\n';
     if (history) {
@@ -1152,7 +1156,7 @@ async function callAI(prompt, history) {
 
 async function callAIRaw(prompt, systemPrompt) {
   try {
-    const GEMINI_KEY = 'AIzaSyAUh5PREV7zzeRZo6amlDNVIrTqhCwFMnI';
+    const GEMINI_KEY = 'AIzaSyBNJtXMM1XbJNnnfzJQOcNga8DcDjG1M14';
     const fullPrompt = (systemPrompt || 'Esti un asistent util.') + '\n\n' + prompt;
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
       method: 'POST',
